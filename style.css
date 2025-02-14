@@ -1,0 +1,200 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+    overflow: hidden;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    position: relative;
+}
+
+#oyun {
+    width: 100%;
+    height: 600px;
+    max-height: 80vh;
+    border: 2px solid black;
+    position: relative;
+    overflow: hidden;
+    background-color: #87CEEB;
+    touch-action: none;
+}
+
+#kus {
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    left: 25%;
+    top: 250px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 1000;
+    transform: rotate(0deg);
+}
+
+.boru {
+    width: 100px;
+    position: absolute;
+    right: -100px;
+    background-color: #f0f0f0;
+    border: 2px solid #333;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 11px;
+    text-align: center;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.ders-ismi {
+    color: #000;
+    font-weight: bold;
+    word-wrap: break-word;
+    max-width: 90px;
+    font-size: 9px;
+    text-align: center;
+}
+
+#puan {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    z-index: 1;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+#baslat-ekrani {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 2000;
+    max-width: 90%;
+}
+
+button {
+    padding: 12px 24px !important;
+    font-size: 16px !important;
+    margin: 10px auto !important;
+    display: block !important;
+    min-width: 150px;
+}
+
+/* Mobil cihazlar için özel ayarlar */
+@media (max-width: 768px) {
+    .container {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    #oyun {
+        height: 80vh;
+        width: 95%;
+        margin: 0 auto;
+    }
+
+    .boru {
+        width: 80px;
+        font-size: 10px;
+    }
+
+    .ders-ismi {
+        font-size: 8px;
+        max-width: 70px;
+    }
+
+    #puan {
+        font-size: 16px;
+        top: 5px;
+        right: 5px;
+    }
+
+    #baslat-ekrani {
+        width: 90%;
+        max-width: 300px;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 15px 30px !important;
+        font-size: 18px !important;
+    }
+}
+
+/* Yatay mod için özel ayarlar */
+@media (max-height: 500px) {
+    #oyun {
+        height: 90vh;
+    }
+}
+
+.mukavemet {
+    background-image: url('https://www.seckin.com.tr/resim/urun/9786257803076.jpg');
+}
+
+.termodinamik {
+    background-image: url('https://www.seckin.com.tr/resim/urun/9786257803069.jpg');
+}
+
+.makine-elemanlari {
+    background-image: url('https://www.seckin.com.tr/resim/urun/9786257803083.jpg');
+}
+
+.isi-mekanigi {
+    background-color: purple;
+}
+
+.mukavemet::after {
+    content: "MUKAVEMET";
+}
+
+.termodinamik::after {
+    content: "TERMODİNAMİK";
+}
+
+.makine-elemanlari::after {
+    content: "MAKİNE";
+}
+
+/* Her ders için farklı renkler */
+.giris { background-color: #FFE4E1; }
+.statik { background-color: #E6E6FA; }
+.elektroteknik { background-color: #F0FFF0; }
+.malzeme2 { background-color: #F5F5DC; }
+.akiskanlar1 { background-color: #F0F8FF; }
+.mukavemet1 { background-color: #FFF0F5; }
+.mukavemet2 { background-color: #F5FFFA; }
+.termodinamik1 { background-color: #FAEBD7; }
+.akiskanlar2 { background-color: #E0FFFF; }
+.isi-transferi { background-color: #FFE4B5; }
+.makine-elemanlari1 { background-color: #F0E68C; }
+.termodinamik2 { background-color: #B0E0E6; }
+.makine-elemanlari2 { background-color: #DDA0DD; } 
