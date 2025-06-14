@@ -1,356 +1,275 @@
 const oyun = document.getElementById('oyun');
 const kus = document.getElementById('kus');
-const puanElement = document.getElementById('puan');
+const puanEl = document.getElementById('puan');
 const baslatEkrani = document.getElementById('baslat-ekrani');
 
-let kusKonumu = 250;
-let hiz = 0;
+let oyunCalisiyor = false;
 let puan = 0;
-let oyunBasladi = false;
-let oyunBitti = false;
+let can = 2;
 
-const yerCekimi = 0.2;
-const ziplamaGucu = -5;
+let kusYuksekligi = 250;
+let kusHiz = 0;
+const yercekimi = 0.2;
+const ziplaGucu = -4.5;
+const maxDusmeHizi = 7;
+
 const boruHizi = 1.5;
-const boruAraligi = 250;
+const boruAraligi = 200;
+const boruUstBoslukMin = 80;
+const boruUstBoslukMax = 200;
 
 let borular = [];
+let sonBoruX = 0;
 
-const kitapTipleri = [
-    'giris',
-    'statik',
-    'elektroteknik',
-    'malzeme2',
-    'akiskanlar1',
-    'mukavemet1',
-    'mukavemet2',
-    'termodinamik1',
-    'akiskanlar2',
-    'isi-transferi',
-    'makine-elemanlari1',
-    'termodinamik2',
-    'makine-elemanlari2'
+// Yeni eklenen değişken: çarpışma sonrası kısa bir süre dokunulmazlık sağlar
+let geciciDokunulmazlik = false;
+let dokunulmazlikSuresi = 1000; // 1 saniye (milisaniye cinsinden)
+
+const boruDersleri = [
+    "MUKAVEMET",
+    "TERMODİNAMİK",
+    "MAKİNE ELEMANLARI",
+    "ISI MEKANİĞİ",
+    "ELEKTROTEKNİK",
+    "AKIŞKANLAR",
 ];
 
-let kitapIndex = 0;
-
-let enYuksekSkor = 0;
-
-let canHakki = 2; // Toplam 2 can (1 ekstra can)
-let oyunYenidenBasliyor = false;
-
-// Style.css'e eklenecek sınıflar için ders isimleri
-const dersIsimleri = {
-    'giris': 'Makine Mühendisliğine Giriş',
-    'statik': 'Statik',
-    'elektroteknik': 'Elektroteknik ve Elektrik Makineleri',
-    'malzeme2': 'Malzeme Bilgisi II',
-    'akiskanlar1': 'Akışkanlar Mekaniği I',
-    'mukavemet1': 'Mukavemet I',
-    'mukavemet2': 'Mukavemet II',
-    'termodinamik1': 'Termodinamik I',
-    'akiskanlar2': 'Akışkanlar Mekaniği II',
-    'isi-transferi': 'Isı Transferi I',
-    'makine-elemanlari1': 'Makine Elemanları I',
-    'termodinamik2': 'Termodinamik II',
-    'makine-elemanlari2': 'Makine Elemanları II'
-};
-
-function oyunuBaslat() {
-    if (!oyunBasladi && !oyunBitti) {
-        oyunBasladi = true;
-        baslatEkrani.style.display = 'none';
-        oyunDongusu();
-        boruOlustur();
-    }
-}
-
-function ziplamaYap() {
-    if (oyunBasladi && !oyunBitti) {
-        hiz = ziplamaGucu;
-    }
-}
-
-function boruOlustur() {
-    if (!oyunBasladi) return;
-
-    const boruYukseklik = Math.random() * 150 + 150;
-    
-    const ustBoru = document.createElement('div');
-    ustBoru.className = 'boru ' + kitapTipleri[kitapIndex];
-    ustBoru.style.height = boruYukseklik + 'px';
-    ustBoru.style.top = '0';
-    ustBoru.style.right = '-60px';
-    
-    // Ders ismini ekle
-    const dersIsmi = document.createElement('div');
-    dersIsmi.className = 'ders-ismi';
-    dersIsmi.textContent = dersIsimleri[kitapTipleri[kitapIndex]];
-    ustBoru.appendChild(dersIsmi);
-    
-    const altBoru = document.createElement('div');
-    altBoru.className = 'boru ' + kitapTipleri[kitapIndex];
-    altBoru.style.height = (600 - boruYukseklik - boruAraligi) + 'px';
-    altBoru.style.bottom = '0';
-    altBoru.style.right = '-60px';
-    
-    oyun.appendChild(ustBoru);
-    oyun.appendChild(altBoru);
-    
-    borular.push({
-        ust: ustBoru,
-        alt: altBoru,
-        gecildi: false
-    });
-
-    kitapIndex = (kitapIndex + 1) % kitapTipleri.length;
-    
-    if (oyunBasladi && !oyunBitti) {
-        setTimeout(boruOlustur, 4000);
-    }
-}
-
-function oyunDongusu() {
-    if (!oyunBasladi) return;
-
-    hiz += yerCekimi;
-    kusKonumu += hiz;
-    kus.style.top = kusKonumu + 'px';
-
-    borular.forEach((boru, index) => {
-        const boruX = parseInt(boru.ust.style.right || '-60');
-        const yeniX = boruX + boruHizi;
-        boru.ust.style.right = yeniX + 'px';
-        boru.alt.style.right = yeniX + 'px';
-
-        if (!boru.gecildi && yeniX > 280) {
-            boru.gecildi = true;
-            puan++;
-            puanElement.textContent = `Skor: ${puan} | En Yüksek: ${enYuksekSkor} | Can: ${canHakki}`;
-            
-            if (puan >= 30) {
-                oyunuBitir();
-                return;
-            }
-        }
-
-        if (yeniX > 240 && yeniX < 340) {
-            const kusUst = kusKonumu + 10;
-            const kusAlt = kusKonumu + 30;
-            const boruUstAlt = parseInt(boru.ust.style.height);
-            const boruAltUst = 600 - parseInt(boru.alt.style.height);
-
-            if (kusUst < boruUstAlt - 10 || kusAlt > boruAltUst + 10) {
-                oyunuBitir();
-            }
-        }
-
-        if (yeniX > 460) {
-            oyun.removeChild(boru.ust);
-            oyun.removeChild(boru.alt);
-            borular.splice(index, 1);
-        }
-    });
-
-    if (kusKonumu < -30 || kusKonumu > 590) {
-        oyunuBitir();
+function baslat() {
+    if (oyunCalisiyor && can > 0 && baslatEkrani.style.display === 'none') {
         return;
     }
 
-    if (!oyunBitti) {
-        requestAnimationFrame(oyunDongusu);
-    }
-}
+    baslatEkrani.style.display = 'none';
 
-function oyunuBitir() {
-    if (canHakki > 0) {
-        canHakki--;
-        let mevcutPuan = puan;
-        
-        // Büt mesajı
-        baslatEkrani.innerHTML = `
-            <div style="text-align: center;">
-                <p style="font-size: 24px; margin-bottom: 20px;">📚 BÜTE GİRDİN!</p>
-                <p style="margin-bottom: 20px; color: #d63031;">Son hakkın, dikkatli ol!</p>
-                <button id="yenidenDene" style="
-                    padding: 10px 20px;
-                    font-size: 18px;
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                ">BÜTE GİR</button>
-            </div>
-        `;
-        baslatEkrani.style.display = 'block';
-        
-        // Yeniden deneme butonu için event listener
-        document.getElementById('yenidenDene').addEventListener('click', () => {
-            oyunYenidenBaslat(mevcutPuan);
-        });
-        
-    } else {
-        oyunBitti = true;
-        oyunBasladi = false;
-        if (puan > enYuksekSkor) {
-            enYuksekSkor = puan;
-        }
-        
-        let mesaj;
-        if (puan >= 30) {
-            mesaj = '🎓 TEBRİKLER!<br>OKUL 4 YILDA BİTTİ!';
-        } else {
-            mesaj = '😅 OKUL UZADI!<br>Seneye tekrar dene!';
-        }
-        
-        // Final ekranı
-        baslatEkrani.innerHTML = `
-            <div style="text-align: center;">
-                <p style="font-size: 24px; margin-bottom: 20px;">${mesaj}</p>
-                <p style="margin-bottom: 20px;">Skor: ${puan} | En Yüksek: ${enYuksekSkor}</p>
-                <button id="yeniOyun" style="
-                    padding: 10px 20px;
-                    font-size: 18px;
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                ">YENİDEN DENE</button>
-            </div>
-        `;
-        baslatEkrani.style.display = 'block';
-        
-        // Yeni oyun butonu için event listener
-        document.getElementById('yeniOyun').addEventListener('click', () => {
-            canHakki = 2;
-            puan = 0;
-            oyunBitti = false;
-            puanElement.textContent = `Skor: 0 | En Yüksek: ${enYuksekSkor} | Can: ${canHakki}`;
-            oyunuBaslat();
-        });
-    }
-}
+    oyunCalisiyor = true;
+    puan = 0;
+    puanEl.textContent = puan;
+    can = 2; // Her yeni oyunda canı sıfırla
 
-function oyunYenidenBaslat(mevcutPuan) {
-    kusKonumu = 250;
-    hiz = 0;
-    kus.style.top = kusKonumu + 'px';
-    
+    kusYuksekligi = 250;
+    kusHiz = 0;
+    kus.style.top = kusYuksekligi + 'px';
+    kus.style.transform = `rotate(0deg)`;
+
     borular.forEach(boru => {
-        oyun.removeChild(boru.ust);
-        oyun.removeChild(boru.alt);
+        boru.element.remove();
+        boru.ustElement.remove();
     });
     borular = [];
-    
-    puan = mevcutPuan;
-    oyunBitti = false;
-    puanElement.textContent = `Skor: ${puan} | En Yüksek: ${enYuksekSkor} | Can: ${canHakki}`;
-    
-    setTimeout(() => {
-        baslatEkrani.style.display = 'none';
-        oyunBasladi = true;
-        oyunDongusu();
-        boruOlustur();
-    }, 1000);
-}
 
-function puanGuncelle() {
-    puanElement.textContent = `Skor: ${puan} | En Yüksek: ${enYuksekSkor} | Can: ${canHakki}`;
-}
-
-// Event Listeners
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        if (!oyunBasladi && !oyunBitti) {
-            oyunuBaslat();
-        }
-        ziplamaYap();
+    // Başlangıçta 3 boru oluştur. İlk boru oyun alanının sağından başlasın.
+    for (let i = 0; i < 3; i++) {
+        borular.push(createBoru(oyun.clientWidth + i * boruAraligi));
     }
-});
+    // `sonBoruX`'i en son eklenen borunun konumu olarak güncelle.
+    sonBoruX = borular[borular.length - 1].x;
+
+    // Oyunu başlattığımızda dokunulmazlığı sıfırla
+    geciciDokunulmazlik = false;
+
+    oyunDongusu();
+}
+
+function createBoru(x) {
+    const boru = document.createElement('div');
+    boru.classList.add('boru');
+    oyun.appendChild(boru);
+
+    const ustBoru = document.createElement('div');
+    ustBoru.classList.add('boru');
+    oyun.appendChild(ustBoru);
+
+    const boruBosluguYuksekligi = boruUstBoslukMin + Math.random() * (boruUstBoslukMax - boruUstBoslukMin);
+    const minBoruYuksekligi = 50;
+
+    const altBoruYuksekligi = minBoruYuksekligi + Math.random() * (oyun.clientHeight - boruBosluguYuksekligi - 2 * minBoruYuksekligi);
+    const ustBoruYuksekligi = oyun.clientHeight - altBoruYuksekligi - boruBosluguYuksekligi;
+
+    boru.style.height = altBoruYuksekligi + 'px';
+    boru.style.left = x + 'px';
+    boru.style.bottom = '0';
+
+    ustBoru.style.height = ustBoruYuksekligi + 'px';
+    ustBoru.style.left = x + 'px';
+    ustBoru.style.top = '0';
+
+    const dersIndex = Math.floor(Math.random() * boruDersleri.length);
+    boru.textContent = boruDersleri[dersIndex];
+    ustBoru.textContent = boruDersleri[dersIndex];
+
+    return {
+        element: boru,
+        ustElement: ustBoru,
+        x: x,
+        altYukseklik: altBoruYuksekligi,
+        ustYukseklik: ustBoruYuksekligi,
+        gecildi: false
+    };
+}
+
+function oyunDongusu() {
+    if (!oyunCalisiyor) return;
+
+    kusHiz += yercekimi;
+    if (kusHiz > maxDusmeHizi) {
+        kusHiz = maxDusmeHizi;
+    }
+    kusYuksekligi += kusHiz;
+
+    if (kusYuksekligi < 0) {
+        kusYuksekligi = 0;
+        kusHiz = 0;
+    }
+    if (kusYuksekligi > oyun.clientHeight - kus.clientHeight) {
+        kusYuksekligi = oyun.clientHeight - kus.clientHeight;
+        carpismaIslemi();
+        return;
+    }
+
+    kus.style.top = kusYuksekligi + 'px';
+
+    const derece = Math.min(Math.max(kusHiz * 6, -30), 90);
+    kus.style.transform = `rotate(${derece}deg)`;
+
+    let yeniBoruEklendi = false;
+
+    for (let i = 0; i < borular.length; i++) {
+        let boru = borular[i];
+        boru.x -= boruHizi;
+
+        boru.element.style.left = boru.x + 'px';
+        boru.ustElement.style.left = boru.x + 'px';
+
+        // Boru ekranın solundan tamamen çıktıysa kaldır
+        if (boru.x + boru.element.offsetWidth < 0) {
+            boru.element.remove();
+            boru.ustElement.remove();
+            borular.splice(i, 1);
+            i--;
+        }
+
+        // Puanlama kontrolü ve yeni boru ekleme
+        const kusSol = kus.getBoundingClientRect().left;
+        const boruSag = boru.element.getBoundingClientRect().right;
+
+        // Kuş borunun sağını geçtiyse (yani boruyu geçtiyse) ve daha önce geçilmediyse puan ver
+        if (kusSol > boruSag && !boru.gecildi) {
+            puan++;
+            puanEl.textContent = puan;
+            boru.gecildi = true; // Bu borunun geçildiğini işaretle
+
+            // Yeni boru ekleme mantığı:
+            // Sadece tek bir yeni boru eklenmesini sağlamak ve boru aralığını korumak için.
+            // Eğer yeterince boru yoksa veya en son boruya yaklaştıysak yeni bir tane ekle.
+            if (borular.length < 3 && !yeniBoruEklendi) { // Ekrandaki boru sayısını kontrol et
+                const yeniBoruKonumu = sonBoruX + boruAraligi;
+                borular.push(createBoru(yeniBoruKonumu));
+                sonBoruX = yeniBoruKonumu; // `sonBoruX` değerini güncelle
+                yeniBoruEklendi = true; // Bu döngüde bir boru eklendi
+            }
+        }
+    }
+
+    // Çarpışma kontrolü sadece dokunulmazlık aktif değilken çalışsın
+    if (!geciciDokunulmazlik && carpismaKontrol()) {
+        carpismaIslemi();
+        return;
+    }
+
+    requestAnimationFrame(oyunDongusu);
+}
+
+function carpismaKontrol() {
+    const kusRect = kus.getBoundingClientRect();
+
+    for (let boru of borular) {
+        const altBoruRect = boru.element.getBoundingClientRect();
+        const ustBoruRect = boru.ustElement.getBoundingClientRect();
+
+        // Boru ekranın dışındaysa kontrol etme
+        if (altBoruRect.right < 0) continue;
+
+        // Yatayda temas kontrolü
+        if (kusRect.right > altBoruRect.left && kusRect.left < altBoruRect.right) {
+            // Dikeyde temas kontrolü
+            if (kusRect.bottom > altBoruRect.top || kusRect.top < ustBoruRect.bottom) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function carpismaIslemi() {
+    if (geciciDokunulmazlik) return; // Zaten dokunulmazsa tekrar işlem yapma
+
+    can--; // Canı bir azalt
+
+    if (can === 1) {
+        oyunCalisiyor = false; // Oyunu geçici olarak durdur
+        baslatEkrani.style.display = 'flex';
+        baslatEkrani.textContent = `Büte Kaldın! Puanın: ${puan}\nDevam etmek için tıkla.`;
+
+        // Kuşu çarptığı yerden biraz yukarı fırlat
+        kusHiz = ziplaGucu * 2;
+        // Kuşun borudan çıktığından emin olmak için konumunu ayarla
+        // Bu, özellikle zemine veya boruya sıkışmasını engeller
+        kusYuksekligi -= 20; // Hafifçe yukarı kaydır
+
+        // Kısa süreli dokunulmazlık ver
+        geciciDokunulmazlik = true;
+        setTimeout(() => {
+            geciciDokunulmazlik = false;
+            // Dokunulmazlık bittiğinde oyun hala duraklatılmışsa (yani kullanıcı tıklamadıysa)
+            // burada ek bir kontrol yapabiliriz, ancak `kusZipla` zaten bunu hallediyor.
+        }, dokunulmazlikSuresi);
+
+    } else if (can === 0) {
+        oyunCalisiyor = false; // Oyun tamamen bitti
+        baslatEkrani.style.display = 'flex';
+        baslatEkrani.textContent = `Okul Uzadı! Puanın: ${puan}\nTekrar başlamak için tıkla.`;
+        geciciDokunulmazlik = false; // Oyun bittiğinde dokunulmazlığı sıfırla
+    }
+}
+
+function kusZipla() {
+    if (!oyunCalisiyor) {
+        if (can === 1 && baslatEkrani.style.display === 'flex') {
+            // "Büte Kaldın" ekranı açıkken zıplama ile oyuna devam et
+            baslatEkrani.style.display = 'none';
+            oyunCalisiyor = true;
+            geciciDokunulmazlik = false; // Dokunulmazlığı kaldır, çünkü kullanıcı devam etti
+            oyunDongusu(); // Oyun döngüsünü kaldığı yerden devam ettir
+        } else if (can === 0 && baslatEkrani.style.display === 'flex') {
+            return; // Oyun bitmişse zıplama değil, başlatma ekranı tıklaması gerekli
+        } else {
+            return; // Oyun henüz başlamamışsa (ilk ekran) veya başka bir durumsa zıplamayı engelle
+        }
+    }
+    kusHiz = ziplaGucu; // Kuşa yukarı doğru hız ver
+}
 
 baslatEkrani.addEventListener('click', () => {
-    if (!oyunBasladi) {
-        canHakki = 2;
-        puan = 0;
-        oyunBitti = false;
-        puanElement.textContent = `Skor: 0 | En Yüksek: ${enYuksekSkor} | Can: ${canHakki}`;
-        oyunuBaslat();
+    if (can === 0) {
+        baslat();
+    } else if (can === 1 && baslatEkrani.style.display === 'flex') {
+        baslatEkrani.style.display = 'none';
+        oyunCalisiyor = true;
+        geciciDokunulmazlik = false; // Dokunulmazlığı kaldır
+        oyunDongusu();
+    } else {
+        baslat();
     }
 });
 
-oyun.addEventListener('click', ziplamaYap);
-
-puanElement.textContent = `Skor: 0 | En Yüksek: 0 | Can: ${canHakki}`; 
-oyun.addEventListener('click', ziplamaYap); 
-
-// Başlangıç ekranını da güncelleyelim
-baslatEkrani.innerHTML = `
-    <div style="text-align: center;">
-        <p style="font-size: 24px; margin-bottom: 20px;">Flappy Mühendis</p>
-        <button id="baslatButon" style="
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        ">BAŞLA</button>
-        <p style="margin-top: 20px;">Boşluk tuşu veya tıklama ile zıpla</p>
-    </div>
-`;
-
-// Başlat butonu için event listener
-document.getElementById('baslatButon').addEventListener('click', () => {
-    if (!oyunBasladi) {
-        canHakki = 2;
-        puan = 0;
-        oyunBitti = false;
-        puanElement.textContent = `Skor: 0 | En Yüksek: ${enYuksekSkor} | Can: ${canHakki}`;
-        oyunuBaslat();
+window.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        kusZipla();
     }
 });
 
-// Buton hover efekti için CSS
-const style = document.createElement('style');
-style.textContent = `
-    button:hover {
-        background-color: #45a049 !important;
-        transform: scale(1.05);
-        transition: all 0.2s;
-    }
-`;
-document.head.appendChild(style);
-
-// Mobil kontroller için dokunma olayları
-document.addEventListener('touchstart', function(e) {
-    e.preventDefault(); // Varsayılan dokunma davranışını engelle
-    if (!oyunBasladi && !oyunBitti) {
-        oyunuBaslat();
-    }
-    ziplamaYap();
-}, { passive: false });
-
-// Çift dokunma yakınlaştırmasını engelle
-document.addEventListener('dblclick', function(e) {
+window.addEventListener('touchstart', e => {
     e.preventDefault();
+    kusZipla();
 });
-
-// Mobil cihazlarda yeniden boyutlandırma için
-window.addEventListener('resize', function() {
-    const oyunAlani = document.getElementById('oyun');
-    const containerHeight = window.innerHeight * 0.8;
-    oyunAlani.style.height = containerHeight + 'px';
-});
-
-// Oyun alanını mobil cihaza göre ayarla
-window.addEventListener('load', function() {
-    const oyunAlani = document.getElementById('oyun');
-    const containerHeight = window.innerHeight * 0.8;
-    oyunAlani.style.height = containerHeight + 'px';
-}); 
